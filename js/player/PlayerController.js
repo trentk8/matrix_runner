@@ -1,4 +1,11 @@
-﻿import Constants from "../core/Constants.js";
+import Constants from "../core/Constants.js";
+import {
+  exitPointerLock,
+  getPointerLockElement,
+  POINTER_LOCK_CHANGE_EVENTS,
+  POINTER_LOCK_ERROR_EVENTS,
+  requestPointerLock
+} from "../core/PointerLock.js";
 
 class PlayerController {
   constructor(canvas, camera, gameState, options = {}) {
@@ -17,6 +24,8 @@ class PlayerController {
     this.sensitivity = 0.0025;
     this.isPointerLocked = false;
     this.enablePointerLock = options.enablePointerLock !== false;
+    this._pointerLockChangeEvents = POINTER_LOCK_CHANGE_EVENTS;
+    this._pointerLockErrorEvents = POINTER_LOCK_ERROR_EVENTS;
 
     this._bindEvents();
   }
@@ -31,8 +40,12 @@ class PlayerController {
 
     window.addEventListener("keydown", this._onKeyDown);
     window.addEventListener("keyup", this._onKeyUp);
-    document.addEventListener("pointerlockchange", this._onPointerLockChange);
-    document.addEventListener("pointerlockerror", this._onPointerLockError);
+    this._pointerLockChangeEvents.forEach((eventName) => {
+      document.addEventListener(eventName, this._onPointerLockChange);
+    });
+    this._pointerLockErrorEvents.forEach((eventName) => {
+      document.addEventListener(eventName, this._onPointerLockError);
+    });
     document.addEventListener("mousemove", this._onMouseMove);
     this.canvas.addEventListener("click", this._onCanvasClick);
   }
@@ -51,10 +64,14 @@ class PlayerController {
       return;
     }
     this.enablePointerLock = next;
-    if (!this.enablePointerLock && document.pointerLockElement === this.canvas) {
-      document.exitPointerLock();
+    if (!this.enablePointerLock) {
+      const lockedElement = getPointerLockElement();
+      if (lockedElement === this.canvas) {
+        exitPointerLock();
+      }
     }
-    this.isPointerLocked = this.enablePointerLock && document.pointerLockElement === this.canvas;
+    const lockedElement = getPointerLockElement();
+    this.isPointerLocked = this.enablePointerLock && lockedElement === this.canvas;
   }
 
   resetMovement() {
@@ -71,8 +88,12 @@ class PlayerController {
   dispose() {
     window.removeEventListener("keydown", this._onKeyDown);
     window.removeEventListener("keyup", this._onKeyUp);
-    document.removeEventListener("pointerlockchange", this._onPointerLockChange);
-    document.removeEventListener("pointerlockerror", this._onPointerLockError);
+    this._pointerLockChangeEvents.forEach((eventName) => {
+      document.removeEventListener(eventName, this._onPointerLockChange);
+    });
+    this._pointerLockErrorEvents.forEach((eventName) => {
+      document.removeEventListener(eventName, this._onPointerLockError);
+    });
     document.removeEventListener("mousemove", this._onMouseMove);
     this.canvas.removeEventListener("click", this._onCanvasClick);
   }
@@ -127,7 +148,13 @@ class PlayerController {
         this.gameState.emit("maze:regenerate");
         break;
       case "Escape":
-        document.exitPointerLock();
+      case "KeyP":
+        if (this.gameState.phase === "running") {
+          this.gameState.emit("ui:pauseRequested");
+        } else if (this.gameState.phase === "paused") {
+          this.gameState.emit("ui:resumeRequested");
+        }
+        exitPointerLock();
         break;
       default:
         break;
@@ -191,10 +218,14 @@ class PlayerController {
     if (this.gameState.phase !== "running") {
       return;
     }
-    if (!this.enablePointerLock || document.pointerLockElement === this.canvas) {
+    if (!this.enablePointerLock) {
       return;
     }
-    this.canvas.requestPointerLock();
+    const lockedElement = getPointerLockElement();
+    if (lockedElement === this.canvas) {
+      return;
+    }
+    requestPointerLock(this.canvas);
   }
 
   _normalizeAxis(value) {
@@ -225,7 +256,12 @@ class PlayerController {
   }
 
   _handlePointerLockChange() {
-    this.isPointerLocked = this.enablePointerLock && document.pointerLockElement === this.canvas;
+    const wasLocked = this.isPointerLocked;
+    const lockedElement = getPointerLockElement();
+    this.isPointerLocked = this.enablePointerLock && lockedElement === this.canvas;
+    if (wasLocked && !this.isPointerLocked && this.gameState.phase === "running") {
+      this.gameState.emit("ui:pauseRequested");
+    }
   }
 
   _handlePointerLockError() {
@@ -234,4 +270,3 @@ class PlayerController {
 }
 
 export default PlayerController;
-

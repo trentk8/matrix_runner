@@ -67,6 +67,41 @@ body {
   text-transform: uppercase;
 }
 
+#hud .hud-button {
+  margin-top: 0.75rem;
+  padding: 0.45rem 0.9rem;
+  background: transparent;
+  border: 1px solid var(--accent-color);
+  color: var(--accent-color);
+  font-family: inherit;
+  font-size: 0.7rem;
+  text-transform: inherit;
+  letter-spacing: 0.14em;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+#hud .hud-button:hover,
+#hud .hud-button:focus {
+  background: var(--accent-color);
+  color: var(--bg-color);
+  outline: none;
+}
+
+#hud .hud-button[disabled],
+#hud .hud-button[aria-disabled="true"] {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: transparent;
+  color: rgba(224, 224, 224, 0.6);
+  border-color: rgba(0, 255, 255, 0.4);
+}
+
+#hud .hud-button--active {
+  background: var(--accent-color);
+  color: var(--bg-color);
+}
+
 #menu {
   position: absolute;
   inset: 0;
@@ -344,6 +379,10 @@ body {
   background: rgba(10, 10, 10, 0.95);
   border: 2px solid var(--accent-color);
   box-shadow: 0 0 16px rgba(0, 255, 255, 0.2);
+}
+
+.control-overlay__menu-panel[hidden] {
+  display: none;
 }
 
 .control-overlay__menu-panel button {

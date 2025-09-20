@@ -1,5 +1,7 @@
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
+let overlayMenuCounter = 0;
+
 class ControlOverlay {
   constructor(rootElement, options = {}) {
     this.rootElement = rootElement;
@@ -9,6 +11,7 @@ class ControlOverlay {
     this._phase = options.phase ?? "boot";
     this._enabled = options.enabled ?? false;
     this._visible = false;
+    this._menuOpen = false;
 
     this._moveState = { pointerId: null };
     this._lookState = { pointerId: null };
@@ -81,6 +84,13 @@ class ControlOverlay {
     this.menu = this.element.querySelector("[data-menu]");
     this.menuButton = this.menu.querySelector(".control-overlay__menu-button");
     this.menuPanel = this.menu.querySelector(".control-overlay__menu-panel");
+    this._menuPanelId = `control-overlay-menu-panel-${overlayMenuCounter++}`;
+    this.menuPanel.id = this._menuPanelId;
+    this.menuPanel.hidden = true;
+    this.menuPanel.setAttribute("aria-hidden", "true");
+    this.menuButton.setAttribute("aria-haspopup", "true");
+    this.menuButton.setAttribute("aria-controls", this._menuPanelId);
+    this.menuButton.setAttribute("aria-expanded", "false");
   }
 
   _bindJoysticks() {
@@ -155,10 +165,10 @@ class ControlOverlay {
 
   _bindMenu() {
     this.menuButton.addEventListener("click", () => {
-      if (this.menuPanel.hasAttribute("hidden")) {
-        this._openMenu();
-      } else {
+      if (this._menuOpen) {
         this._closeMenu();
+      } else {
+        this._openMenu();
       }
     });
 
@@ -186,11 +196,22 @@ class ControlOverlay {
   }
 
   _openMenu() {
+    if (this._menuOpen) {
+      return;
+    }
+    this._menuOpen = true;
+    this.menuPanel.hidden = false;
     this.menuPanel.removeAttribute("hidden");
+    this.menuPanel.setAttribute("aria-hidden", "false");
+    this.menuButton.setAttribute("aria-expanded", "true");
   }
 
   _closeMenu() {
+    this._menuOpen = false;
+    this.menuPanel.hidden = true;
     this.menuPanel.setAttribute("hidden", "");
+    this.menuPanel.setAttribute("aria-hidden", "true");
+    this.menuButton.setAttribute("aria-expanded", "false");
   }
 
   _updateMoveJoystick(event) {

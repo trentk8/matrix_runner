@@ -14,6 +14,7 @@ import MenuSystem from "./ui/MenuSystem.js";
 import HUD from "./ui/HUD.js";
 import Notifications from "./ui/Notifications.js";
 import ControlOverlay from "./ui/ControlOverlay.js";
+import { exitPointerLock } from "./core/PointerLock.js";
 
 class MatrixRunnerApp {
   constructor() {
@@ -172,7 +173,7 @@ class MatrixRunnerApp {
       return;
     }
     this.state.setPhase("paused");
-    document.exitPointerLock();
+    exitPointerLock();
     this.menu.show({ mode: "pause" });
     this.notifications.info("SIMULATION_PAUSED");
   }
@@ -187,7 +188,7 @@ class MatrixRunnerApp {
   }
 
     _abortRunToMenu(message, level = "info") {
-    document.exitPointerLock();
+    exitPointerLock();
     this._runCompleted = false;
     this.menu.show({ mode: "launch", ...this.state.mazeConfig });
     this.state.setPhase("menu");
@@ -347,7 +348,7 @@ class MatrixRunnerApp {
 
   _handleRunComplete() {
     this._runCompleted = true;
-    document.exitPointerLock();
+    exitPointerLock();
     const stats = this._collectRunStats();
     this._lastStats = stats;
     this.state.setPhase("complete");
