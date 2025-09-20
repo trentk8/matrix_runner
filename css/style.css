@@ -346,6 +346,10 @@ body {
   box-shadow: 0 0 16px rgba(0, 255, 255, 0.2);
 }
 
+.control-overlay__menu-panel[hidden] {
+  display: none;
+}
+
 .control-overlay__menu-panel button {
   padding: 0.5rem;
   background: transparent;

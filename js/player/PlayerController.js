@@ -127,6 +127,11 @@ class PlayerController {
         this.gameState.emit("maze:regenerate");
         break;
       case "Escape":
+        if (this.gameState.phase === "running") {
+          this.gameState.emit("ui:pauseRequested");
+        } else if (this.gameState.phase === "paused") {
+          this.gameState.emit("ui:resumeRequested");
+        }
         document.exitPointerLock();
         break;
       default:
@@ -225,7 +230,11 @@ class PlayerController {
   }
 
   _handlePointerLockChange() {
+    const wasLocked = this.isPointerLocked;
     this.isPointerLocked = this.enablePointerLock && document.pointerLockElement === this.canvas;
+    if (wasLocked && !this.isPointerLocked && this.gameState.phase === "running") {
+      this.gameState.emit("ui:pauseRequested");
+    }
   }
 
   _handlePointerLockError() {
