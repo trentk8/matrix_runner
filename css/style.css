@@ -1,0 +1,228 @@
+﻿:root {
+  --bg-color: #0a0a0a;
+  --text-color: #e0e0e0;
+  --accent-color: #00ffff;
+  --warning-color: #ff6600;
+  --success-color: #00ff00;
+  --error-color: #ff0000;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-color);
+  color: var(--text-color);
+  font-family: "Courier New", Courier, monospace;
+  overflow: hidden;
+}
+
+#app {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#gameCanvas {
+  width: 100vw;
+  height: 100vh;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+#minimapCanvas {
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
+  width: 200px;
+  height: 200px;
+  border: 2px solid var(--accent-color);
+  background: rgba(10, 10, 10, 0.85);
+}
+
+#hud {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+#menu {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.menu-panel {
+  pointer-events: auto;
+  background: rgba(10, 10, 10, 0.95);
+  border: 2px solid var(--accent-color);
+  padding: 2rem;
+  min-width: 360px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  animation: panelPulse 2s infinite;
+}
+
+.menu-panel h1 {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.5rem;
+  color: var(--accent-color);
+}
+
+.menu-panel button {
+  width: 100%;
+  margin-bottom: 0.75rem;
+  padding: 0.75rem;
+  background: transparent;
+  border: 2px solid var(--accent-color);
+  color: var(--text-color);
+  font-family: inherit;
+  font-size: 0.9rem;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.menu-panel button:hover,
+.menu-panel button:focus {
+  background: var(--accent-color);
+  color: var(--bg-color);
+  outline: none;
+}
+
+#notifications {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+  pointer-events: none;
+}
+
+.notification {
+  padding: 0.5rem 1rem;
+  background: rgba(10, 10, 10, 0.85);
+  border: 1px solid var(--accent-color);
+  animation: notifyPulse 3s infinite;
+}
+
+.fps-counter {
+  color: var(--success-color);
+}
+
+@keyframes panelPulse {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(0, 255, 255, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(0, 255, 255, 0.8);
+  }
+}
+
+@keyframes notifyPulse {
+  0%, 100% {
+    border-color: rgba(0, 255, 255, 0.4);
+  }
+  50% {
+    border-color: rgba(0, 255, 255, 1);
+  }
+}
+
+@media (max-width: 768px) {
+  #minimapCanvas {
+    width: 140px;
+    height: 140px;
+    top: 1rem;
+    right: 1rem;
+  }
+
+  .menu-panel {
+    min-width: auto;
+    width: calc(100% - 2rem);
+  }
+}
+.menu-panel label {
+  display: block;
+  margin-bottom: 0.75rem;
+  font-size: 0.75rem;
+  color: var(--accent-color);
+}
+
+.menu-panel select,
+.menu-panel input {
+  width: 100%;
+  margin-top: 0.35rem;
+  margin-bottom: 0.85rem;
+  padding: 0.5rem;
+  background: rgba(10, 10, 10, 0.9);
+  border: 1px solid var(--accent-color);
+  color: var(--text-color);
+  font-family: inherit;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.menu-panel option {
+  background: var(--bg-color);
+  color: var(--text-color);
+}
+
+.notification-success {
+  border-color: var(--success-color);
+  color: var(--success-color);
+}
+
+.notification-error {
+  border-color: var(--error-color);
+  color: var(--error-color);
+}
+.menu-header p {
+  margin: 0 0 1rem 0;
+  font-size: 0.8rem;
+  color: rgba(224, 224, 224, 0.8);
+}
+
+.menu-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.menu-actions button {
+  margin-bottom: 0;
+}
+
+.menu-stats {
+  margin: 1.25rem 0;
+  padding: 1rem;
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  background: rgba(10, 30, 40, 0.6);
+  font-size: 0.85rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.menu-hint {
+  margin-top: 1.25rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  color: rgba(224, 224, 224, 0.6);
+}

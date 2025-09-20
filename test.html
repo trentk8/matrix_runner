@@ -1,0 +1,70 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Matrix Runner Tests</title>
+  <style>
+    body { font-family: "Courier New", Courier, monospace; background: #0a0a0a; color: #e0e0e0; padding: 2rem; }
+    h1 { color: #00ffff; text-transform: uppercase; letter-spacing: 0.12em; }
+    .result { margin-bottom: 0.5rem; }
+    .pass { color: #00ff00; }
+    .fail { color: #ff0000; }
+  </style>
+</head>
+<body>
+  <h1>Matrix Runner Diagnostics</h1>
+  <div id="results"></div>
+  <script type="module">
+    import MazeData from "./js/maze/MazeData.js";
+    import MazeGenerator from "./js/maze/MazeGenerator.js";
+    import FogOfWar from "./js/maze/FogOfWar.js";
+
+    const results = document.getElementById("results");
+
+    const log = (message, pass) => {
+      const div = document.createElement("div");
+      div.className = `result ${pass ? "pass" : "fail"}`;
+      div.textContent = `${pass ? "PASS" : "FAIL"} :: ${message}`;
+      results.appendChild(div);
+    };
+
+    const mazeData = new MazeData(15, 15);
+    const generator = new MazeGenerator(mazeData);
+    const config = generator.generate({ width: 15, height: 15, seed: "diagnostic" });
+
+    const ensureConnectivity = () => {
+      const visited = new Uint8Array(mazeData.width * mazeData.height);
+      const stack = [{ x: 0, y: 0 }];
+      visited[0] = 1;
+      let count = 1;
+      const { DIRECTIONS, DELTAS } = MazeData;
+      while (stack.length) {
+        const cell = stack.pop();
+        for (const direction of Object.values(DIRECTIONS)) {
+          if (!mazeData.hasWall(cell.x, cell.y, direction)) {
+            const delta = DELTAS[direction];
+            const nx = cell.x + delta.dx;
+            const ny = cell.y + delta.dy;
+            if (mazeData.inBounds(nx, ny)) {
+              const idx = ny * mazeData.width + nx;
+              if (!visited[idx]) {
+                visited[idx] = 1;
+                count += 1;
+                stack.push({ x: nx, y: ny });
+              }
+            }
+          }
+        }
+      }
+      return count === mazeData.width * mazeData.height;
+    };
+
+    log("Maze generation produces perfect maze", ensureConnectivity());
+    log("Maze generator returns configuration", config.width === 15 && config.height === 15);
+
+    const fog = new FogOfWar(mazeData.width, mazeData.height);
+    fog.setVisibleCells([0, 1, 2, 3]);
+    log("Fog of war records explored cells", Math.round(fog.getExploredRatio() * mazeData.width * mazeData.height) >= 4);
+  </script>
+</body>
+</html>
