@@ -236,6 +236,13 @@ const COLORS = {
 - Press 'M' - Force minimap toggle
 - Press 'R' - Regenerate maze with same seed
 
+### Mobile Input Overlay
+- Touch/joystick logic lives in `js/ui/ControlOverlay.js`.
+- Two pads: left = movement (forward/back/strafe), right = rotation.
+- Overlay MENU exposes `RESET_RUN` (regenerate) and `GIVE_UP` (reveals fog of war via `FogOfWar.revealAll`).
+- Use `MatrixRunnerApp._setInputMode()` when altering input behaviour so desktop/mobile stay in sync.
+- Debug helpers exist for QA: `window.DEBUG.enableMobileControls()`, `window.DEBUG.enableDesktopControls()`, `window.DEBUG.autoControls()`.
+
 ### Console Commands (expose in dev)
 ```javascript
 window.DEBUG = {

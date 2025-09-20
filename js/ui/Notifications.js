@@ -12,6 +12,10 @@
     this.push(message, "success");
   }
 
+  warning(message) {
+    this.push(message, "warning");
+  }
+
   error(message) {
     this.push(message, "error");
   }

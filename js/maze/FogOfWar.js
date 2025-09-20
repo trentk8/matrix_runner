@@ -16,6 +16,16 @@
     this.explored.fill(0);
   }
 
+  revealAll() {
+    this.visible.fill(1);
+    this.explored.fill(0xff);
+    const remainder = this.cellCount & 7;
+    if (remainder !== 0 && this.explored.length > 0) {
+      const mask = (1 << remainder) - 1;
+      this.explored[this.explored.length - 1] = mask;
+    }
+  }
+
   setVisibleCells(cells) {
     this.visible.fill(0);
     for (let i = 0; i < cells.length; i += 1) {

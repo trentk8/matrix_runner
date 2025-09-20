@@ -113,6 +113,7 @@ body {
   gap: 0.5rem;
   align-items: center;
   pointer-events: none;
+  z-index: 8;
 }
 
 .notification {
@@ -193,10 +194,204 @@ body {
   border-color: var(--error-color);
   color: var(--error-color);
 }
+
+.notification-warning {
+  border-color: var(--warning-color);
+  color: var(--warning-color);
+}
 .menu-header p {
   margin: 0 0 1rem 0;
   font-size: 0.8rem;
   color: rgba(224, 224, 224, 0.8);
+}
+
+.control-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 1.5rem;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 6;
+}
+
+.control-overlay[data-visible="true"] {
+  opacity: 1;
+}
+
+.control-overlay__slot {
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.control-overlay__joystick {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  border: 2px solid var(--accent-color);
+  border-radius: 50%;
+  background: rgba(10, 10, 10, 0.45);
+  backdrop-filter: blur(4px);
+  pointer-events: auto;
+  touch-action: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s ease;
+}
+
+.control-overlay[data-visible="true"] .control-overlay__joystick {
+  box-shadow: 0 0 16px rgba(0, 255, 255, 0.18);
+}
+
+.control-overlay__ring {
+  position: absolute;
+  inset: 12%;
+  border: 1px solid rgba(0, 255, 255, 0.25);
+  border-radius: 50%;
+  box-shadow: inset 0 0 18px rgba(0, 255, 255, 0.12);
+}
+
+.control-overlay__thumb {
+  position: absolute;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 2px solid var(--accent-color);
+  background: rgba(0, 255, 255, 0.2);
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  transition: transform 0.08s ease;
+}
+
+.control-overlay__label {
+  position: absolute;
+  bottom: -2.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.65rem;
+  letter-spacing: 0.16em;
+  color: var(--accent-color);
+  pointer-events: none;
+  user-select: none;
+}
+
+.control-overlay__menu {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.control-overlay[data-visible="true"] .control-overlay__menu {
+  pointer-events: auto;
+}
+
+.control-overlay__menu-button {
+  padding: 0.65rem 1.75rem;
+  background: rgba(10, 10, 10, 0.92);
+  border: 2px solid var(--accent-color);
+  color: var(--text-color);
+  font-family: inherit;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.control-overlay__menu-button:hover,
+.control-overlay__menu-button:focus {
+  background: var(--accent-color);
+  color: var(--bg-color);
+  outline: none;
+}
+
+.control-overlay__menu-panel {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 0.75rem;
+  padding: 0.75rem 1rem;
+  min-width: 12rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: rgba(10, 10, 10, 0.95);
+  border: 2px solid var(--accent-color);
+  box-shadow: 0 0 16px rgba(0, 255, 255, 0.2);
+}
+
+.control-overlay__menu-panel button {
+  padding: 0.5rem;
+  background: transparent;
+  border: 1px solid var(--accent-color);
+  color: var(--text-color);
+  font-family: inherit;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.control-overlay__menu-panel button:hover,
+.control-overlay__menu-panel button:focus {
+  background: var(--accent-color);
+  color: var(--bg-color);
+  outline: none;
+}
+
+.control-overlay[data-visible="false"] .control-overlay__joystick,
+.control-overlay[data-visible="false"] .control-overlay__menu {
+  pointer-events: none;
+}
+
+@media (max-width: 900px) {
+  .control-overlay__joystick {
+    width: 120px;
+    height: 120px;
+  }
+
+  .control-overlay__label {
+    bottom: -2rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .control-overlay {
+    padding: 1rem;
+  }
+
+  .control-overlay__joystick {
+    width: 100px;
+    height: 100px;
+  }
+
+  .control-overlay__thumb {
+    width: 48px;
+    height: 48px;
+  }
+
+  .control-overlay__menu-button {
+    padding: 0.5rem 1.25rem;
+    font-size: 0.7rem;
+  }
+
+  .control-overlay__menu-panel {
+    min-width: 10rem;
+  }
 }
 
 .menu-actions {

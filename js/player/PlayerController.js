@@ -1,10 +1,14 @@
 ﻿import Constants from "../core/Constants.js";
 
 class PlayerController {
-  constructor(canvas, camera, gameState) {
+  constructor(canvas, camera, gameState, options = {}) {
     this.canvas = canvas;
     this.camera = camera;
     this.gameState = gameState;
+    this.inputSources = {
+      keyboard: { forward: 0, strafe: 0, rotate: 0 },
+      overlay: { forward: 0, strafe: 0, rotate: 0 }
+    };
     this.movement = {
       forward: 0,
       strafe: 0,
@@ -12,6 +16,7 @@ class PlayerController {
     };
     this.sensitivity = 0.0025;
     this.isPointerLocked = false;
+    this.enablePointerLock = options.enablePointerLock !== false;
 
     this._bindEvents();
   }
@@ -30,6 +35,37 @@ class PlayerController {
     document.addEventListener("pointerlockerror", this._onPointerLockError);
     document.addEventListener("mousemove", this._onMouseMove);
     this.canvas.addEventListener("click", this._onCanvasClick);
+  }
+
+  setOverlayVector(vector = {}) {
+    const source = this.inputSources.overlay;
+    source.forward = this._normalizeAxis(vector.forward);
+    source.strafe = this._normalizeAxis(vector.strafe);
+    source.rotate = this._normalizeAxis(vector.rotate);
+    this._updateMovement();
+  }
+
+  setPointerLockEnabled(enabled) {
+    const next = Boolean(enabled);
+    if (this.enablePointerLock === next) {
+      return;
+    }
+    this.enablePointerLock = next;
+    if (!this.enablePointerLock && document.pointerLockElement === this.canvas) {
+      document.exitPointerLock();
+    }
+    this.isPointerLocked = this.enablePointerLock && document.pointerLockElement === this.canvas;
+  }
+
+  resetMovement() {
+    const { keyboard, overlay } = this.inputSources;
+    keyboard.forward = 0;
+    keyboard.strafe = 0;
+    keyboard.rotate = 0;
+    overlay.forward = 0;
+    overlay.strafe = 0;
+    overlay.rotate = 0;
+    this._updateMovement();
   }
 
   dispose() {
@@ -55,25 +91,25 @@ class PlayerController {
     switch (event.code) {
       case "KeyW":
       case "ArrowUp":
-        this.movement.forward = 1;
+        this.inputSources.keyboard.forward = 1;
         break;
       case "KeyS":
       case "ArrowDown":
-        this.movement.forward = -1;
+        this.inputSources.keyboard.forward = -1;
         break;
       case "KeyA":
       case "ArrowLeft":
-        this.movement.strafe = -1;
+        this.inputSources.keyboard.strafe = -1;
         break;
       case "KeyD":
       case "ArrowRight":
-        this.movement.strafe = 1;
+        this.inputSources.keyboard.strafe = 1;
         break;
       case "KeyQ":
-        this.movement.rotate = -1;
+        this.inputSources.keyboard.rotate = -1;
         break;
       case "KeyE":
-        this.movement.rotate = 1;
+        this.inputSources.keyboard.rotate = 1;
         break;
       case Constants.DEBUG_KEYS.TOGGLE_DEBUG:
         this.gameState.toggleDebugFlag("showDebugOverlay");
@@ -96,51 +132,53 @@ class PlayerController {
       default:
         break;
     }
+    this._updateMovement();
   }
 
   _handleKeyUp(event) {
     switch (event.code) {
       case "KeyW":
       case "ArrowUp":
-        if (this.movement.forward === 1) {
-          this.movement.forward = 0;
+        if (this.inputSources.keyboard.forward === 1) {
+          this.inputSources.keyboard.forward = 0;
         }
         break;
       case "KeyS":
       case "ArrowDown":
-        if (this.movement.forward === -1) {
-          this.movement.forward = 0;
+        if (this.inputSources.keyboard.forward === -1) {
+          this.inputSources.keyboard.forward = 0;
         }
         break;
       case "KeyA":
       case "ArrowLeft":
-        if (this.movement.strafe === -1) {
-          this.movement.strafe = 0;
+        if (this.inputSources.keyboard.strafe === -1) {
+          this.inputSources.keyboard.strafe = 0;
         }
         break;
       case "KeyD":
       case "ArrowRight":
-        if (this.movement.strafe === 1) {
-          this.movement.strafe = 0;
+        if (this.inputSources.keyboard.strafe === 1) {
+          this.inputSources.keyboard.strafe = 0;
         }
         break;
       case "KeyQ":
-        if (this.movement.rotate === -1) {
-          this.movement.rotate = 0;
+        if (this.inputSources.keyboard.rotate === -1) {
+          this.inputSources.keyboard.rotate = 0;
         }
         break;
       case "KeyE":
-        if (this.movement.rotate === 1) {
-          this.movement.rotate = 0;
+        if (this.inputSources.keyboard.rotate === 1) {
+          this.inputSources.keyboard.rotate = 0;
         }
         break;
       default:
         break;
     }
+    this._updateMovement();
   }
 
   _handleMouseMove(event) {
-    if (!this.isPointerLocked) {
+    if (!this.enablePointerLock || !this.isPointerLocked) {
       return;
     }
     const delta = event.movementX * this.sensitivity;
@@ -153,14 +191,41 @@ class PlayerController {
     if (this.gameState.phase !== "running") {
       return;
     }
-    if (document.pointerLockElement === this.canvas) {
+    if (!this.enablePointerLock || document.pointerLockElement === this.canvas) {
       return;
     }
     this.canvas.requestPointerLock();
   }
 
+  _normalizeAxis(value) {
+    if (!Number.isFinite(value)) {
+      return 0;
+    }
+    if (Math.abs(value) < 0.0001) {
+      return 0;
+    }
+    return Math.max(-1, Math.min(1, value));
+  }
+
+  _updateMovement() {
+    const { keyboard, overlay } = this.inputSources;
+    this.movement.forward = this._clampAxis(keyboard.forward + overlay.forward);
+    this.movement.strafe = this._clampAxis(keyboard.strafe + overlay.strafe);
+    this.movement.rotate = this._clampAxis(keyboard.rotate + overlay.rotate);
+  }
+
+  _clampAxis(value) {
+    if (value > 1) {
+      return 1;
+    }
+    if (value < -1) {
+      return -1;
+    }
+    return value;
+  }
+
   _handlePointerLockChange() {
-    this.isPointerLocked = document.pointerLockElement === this.canvas;
+    this.isPointerLocked = this.enablePointerLock && document.pointerLockElement === this.canvas;
   }
 
   _handlePointerLockError() {
