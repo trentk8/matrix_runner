@@ -13,6 +13,7 @@ import ViewFrustum from "./rendering/ViewFrustum.js";
 import MenuSystem from "./ui/MenuSystem.js";
 import HUD from "./ui/HUD.js";
 import Notifications from "./ui/Notifications.js";
+import ControlOverlay from "./ui/ControlOverlay.js";
 
 class MatrixRunnerApp {
   constructor() {
@@ -22,6 +23,18 @@ class MatrixRunnerApp {
     this.hudElement = document.getElementById("hud");
     this.menuElement = document.getElementById("menu");
     this.notificationElement = document.getElementById("notifications");
+    this.appElement = document.getElementById("app") ?? document.body;
+
+    const nav = typeof navigator !== "undefined" ? navigator : null;
+    const maxTouchPoints = nav ? Math.max(nav.maxTouchPoints || 0, nav.msMaxTouchPoints || 0) : 0;
+    this._coarsePointerQuery = typeof window.matchMedia === "function"
+      ? window.matchMedia("(pointer: coarse)")
+      : null;
+    const coarsePointer = this._coarsePointerQuery ? this._coarsePointerQuery.matches : false;
+    const touchCapable = "ontouchstart" in window || maxTouchPoints > 0;
+    this._inputModeOverride = null;
+    this._coarsePointerListener = null;
+    this._inputMode = coarsePointer || touchCapable ? "mobile" : "desktop";
 
     this.camera = new Camera();
     this.viewFrustum = new ViewFrustum(this.camera);
@@ -36,13 +49,37 @@ class MatrixRunnerApp {
     this.camera.setMaze(this.mazeData);
     this.camera.setCollisionSystem(this.collisionSystem);
 
-    this.playerController = new PlayerController(this.canvas, this.camera, this.state);
+    this.playerController = new PlayerController(this.canvas, this.camera, this.state, {
+      enablePointerLock: this._inputMode !== "mobile"
+    });
     this.minimapRenderer = new MinimapRenderer(this.minimapCanvas);
     this.minimapRenderer.setMaze(this.mazeData, this.fogOfWar);
 
     this.menu = new MenuSystem(this.menuElement, this.state);
     this.hud = new HUD(this.hudElement, this.state);
     this.notifications = new Notifications(this.notificationElement);
+    this.controlOverlay = new ControlOverlay(this.appElement, {
+      playerController: this.playerController,
+      onReset: () => this._handleRegenerateRequest(),
+      onGiveUp: () => this._handleGiveUp()
+    });
+    this.controlOverlay.setPhase(this.state.phase);
+    this.state.subscribe("state:phase", (phase) => {
+      this.controlOverlay.setPhase(phase);
+    });
+
+    this._setInputMode(this._inputMode, { force: true });
+    if (this._coarsePointerQuery) {
+      this._coarsePointerListener = (event) => {
+        const nextMode = event.matches ? "mobile" : "desktop";
+        this._setInputMode(nextMode);
+      };
+      if (typeof this._coarsePointerQuery.addEventListener === "function") {
+        this._coarsePointerQuery.addEventListener("change", this._coarsePointerListener);
+      } else if (typeof this._coarsePointerQuery.addListener === "function") {
+        this._coarsePointerQuery.addListener(this._coarsePointerListener);
+      }
+    }
 
     this._fps = 0;
     this._lastTimestamp = performance.now();
@@ -121,6 +158,15 @@ class MatrixRunnerApp {
     this.state.setPhase("running");
   }
 
+  _handleGiveUp() {
+    if (this.state.phase !== "running") {
+      return;
+    }
+    this.fogOfWar.revealAll();
+    this.state.recordExploration(1);
+    this.notifications.warning("FOG_OVERRIDE_ENGAGED");
+  }
+
   _pauseGame() {
     if (this.state.phase !== "running") {
       return;
@@ -191,9 +237,10 @@ class MatrixRunnerApp {
     this.collisionSystem.setMaze(this.mazeData);
     this.camera.setMaze(this.mazeData);
     this.camera.setPosition(0.5, 0.5);
-    this.playerController.movement.forward = 0;
-    this.playerController.movement.strafe = 0;
-    this.playerController.movement.rotate = 0;
+    this.playerController.resetMovement();
+    if (this.controlOverlay) {
+      this.controlOverlay.reset();
+    }
     this.minimapRenderer.setMaze(this.mazeData, this.fogOfWar);
 
     this._exitPosition = {
@@ -216,6 +263,42 @@ class MatrixRunnerApp {
     const width = window.innerWidth;
     const height = window.innerHeight;
     this.dotRenderer.resize(width, height);
+  }
+
+  _determineAutomaticInputMode() {
+    const coarsePointer = this._coarsePointerQuery ? this._coarsePointerQuery.matches : false;
+    const nav = typeof navigator !== "undefined" ? navigator : null;
+    const maxTouchPoints = nav ? Math.max(nav.maxTouchPoints || 0, nav.msMaxTouchPoints || 0) : 0;
+    const touchCapable = "ontouchstart" in window || maxTouchPoints > 0;
+    return coarsePointer || touchCapable ? "mobile" : "desktop";
+  }
+
+  _setInputMode(mode, options = {}) {
+    const target = mode === "mobile" ? "mobile" : "desktop";
+    if (options.override) {
+      this._inputModeOverride = target;
+    } else if (this._inputModeOverride && !options.force) {
+      return;
+    }
+    if (this._inputMode === target && !options.force) {
+      return;
+    }
+    this._inputMode = target;
+    if (this.playerController && typeof this.playerController.setPointerLockEnabled === "function") {
+      this.playerController.setPointerLockEnabled(target !== "mobile");
+    }
+    if (this.controlOverlay) {
+      this.controlOverlay.setEnabled(target === "mobile");
+      if (target === "mobile") {
+        this.controlOverlay.reset();
+      }
+    }
+  }
+
+  _clearInputModeOverride() {
+    this._inputModeOverride = null;
+    const next = this._determineAutomaticInputMode();
+    this._setInputMode(next, { force: true });
   }
 
   _loop(timestamp) {
@@ -292,16 +375,15 @@ class MatrixRunnerApp {
         }
       },
       revealAll: () => {
-        const indices = new Uint32Array(this.mazeData.width * this.mazeData.height);
-        for (let i = 0; i < indices.length; i += 1) {
-          indices[i] = i;
-        }
-        this.fogOfWar.setVisibleCells(indices);
+        this.fogOfWar.revealAll();
         this.state.recordExploration(1);
       },
       showPerf: () => this.state.toggleDebugFlag("showFPS"),
       pause: () => this._pauseGame(),
-      resume: () => this._resumeGame()
+      resume: () => this._resumeGame(),
+      enableMobileControls: () => this._setInputMode("mobile", { override: true, force: true }),
+      enableDesktopControls: () => this._setInputMode("desktop", { override: true, force: true }),
+      autoControls: () => this._clearInputModeOverride()
     };
   }
 }

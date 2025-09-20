@@ -101,6 +101,12 @@ Create an immersive maze exploration experience that feels like navigating throu
 - Optional movement sound effects
 - Breadcrumb trail option (temporary path marking)
 
+**Mobile/Touch Controls**
+- Detect coarse pointer/touch devices and surface a dual-joystick overlay.
+- Left pad drives forward/back + strafe movement, right pad handles rotation.
+- Central menu button offers `RESET_RUN` (regenerate maze) and `GIVE_UP` (reveal fog of war) actions.
+- Maintain feature parity: on-screen controls respond to touch and pointer events so desktop browsers can test mobile mode.
+
 ## Technical Specifications
 
 ### Rendering Engine
